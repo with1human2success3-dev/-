@@ -16,53 +16,51 @@ interface UserData {
   created_at: string;
 }
 
-export default function AuthTestPage() {
+// Clerk가 있을 때만 렌더링되는 내부 컴포넌트
+function AuthTestPageContent() {
   const [user, setUser] = useState<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [hasClerk, setHasClerk] = useState(false);
-  const [ClerkComponents, setClerkComponents] = useState<any>(null);
   const supabase = useClerkSupabaseClient();
 
-  // Clerk useUser를 안전하게 사용
   useEffect(() => {
-    const hasClerkKey = !!(
-      typeof window !== "undefined" &&
-      (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-      (window as any).__NEXT_DATA__.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !==
-        "pk_test_build_placeholder_key_for_ci_cd" &&
-      (window as any).__NEXT_DATA__.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_")
-    );
-
-    if (!hasClerkKey) {
-      setIsLoaded(true);
-      return;
-    }
-
-    setHasClerk(true);
-
-    // Clerk 컴포넌트 로드
+    // Clerk를 동적으로 로드
     import("@clerk/nextjs")
       .then((clerk) => {
-        setClerkComponents({
-          useUser: clerk.useUser,
-        });
+        // useUser Hook을 사용하는 컴포넌트를 동적으로 생성
+        const UserComponent = () => {
+          const { user: clerkUser, isLoaded: clerkLoaded } = clerk.useUser();
+          
+          useEffect(() => {
+            setUser(clerkUser);
+            setIsLoaded(clerkLoaded);
+          }, [clerkUser, clerkLoaded]);
+          
+          return null;
+        };
+        
+        // 임시로 렌더링하여 Hook 실행
         setIsLoaded(true);
       })
       .catch(() => {
         setIsLoaded(true);
-        setHasClerk(false);
       });
   }, []);
 
-  // ClerkComponents가 로드되면 useUser 사용
-  const UserHook = ClerkComponents?.useUser;
-  const userHookResult = UserHook ? UserHook() : { user: null, isLoaded: false };
-
+  // API를 통해 사용자 정보 가져오기 (더 안전한 방법)
   useEffect(() => {
-    if (userHookResult.isLoaded) {
-      setUser(userHookResult.user);
-    }
-  }, [userHookResult.user, userHookResult.isLoaded]);
+    if (!isLoaded) return;
+    
+    fetch("/api/user-info")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) {
+          setUser(data.user);
+        }
+      })
+      .catch(() => {
+        // 에러 무시
+      });
+  }, [isLoaded]);
 
   const [connectionStatus, setConnectionStatus] = useState<
     "idle" | "testing" | "success" | "error"

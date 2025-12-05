@@ -33,49 +33,30 @@ export default function StorageTestPage() {
   const [user, setUser] = useState<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasClerk, setHasClerk] = useState(false);
-  const [ClerkComponents, setClerkComponents] = useState<any>(null);
   const supabase = useClerkSupabaseClient();
 
-  // Clerk useUser를 안전하게 사용
+  // API를 통해 사용자 정보 가져오기 (Hook 규칙 위반 없이)
   useEffect(() => {
-    const hasClerkKey = !!(
-      typeof window !== "undefined" &&
-      (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-      (window as any).__NEXT_DATA__.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !==
-        "pk_test_build_placeholder_key_for_ci_cd" &&
-      (window as any).__NEXT_DATA__.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_")
-    );
-
-    if (!hasClerkKey) {
-      setIsLoaded(true);
-      return;
-    }
-
-    setHasClerk(true);
-
-    // Clerk 컴포넌트 로드
-    import("@clerk/nextjs")
-      .then((clerk) => {
-        setClerkComponents({
-          useUser: clerk.useUser,
-        });
-        setIsLoaded(true);
-      })
-      .catch(() => {
-        setIsLoaded(true);
+    const fetchUserInfo = async () => {
+      try {
+        const response = await fetch("/api/user-info");
+        const data = await response.json();
+        
+        setHasClerk(data.hasClerk);
+        
+        if (data.user) {
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user info:", error);
         setHasClerk(false);
-      });
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+
+    fetchUserInfo();
   }, []);
-
-  // ClerkComponents가 로드되면 useUser 사용
-  const UserHook = ClerkComponents?.useUser;
-  const userHookResult = UserHook ? UserHook() : { user: null, isLoaded: false };
-
-  useEffect(() => {
-    if (userHookResult.isLoaded) {
-      setUser(userHookResult.user);
-    }
-  }, [userHookResult.user, userHookResult.isLoaded]);
   const [files, setFiles] = useState<FileObject[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
