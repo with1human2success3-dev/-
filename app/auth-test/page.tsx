@@ -16,51 +16,34 @@ interface UserData {
   created_at: string;
 }
 
-// Clerk가 있을 때만 렌더링되는 내부 컴포넌트
-function AuthTestPageContent() {
+export default function AuthTestPage() {
   const [user, setUser] = useState<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [hasClerk, setHasClerk] = useState(false);
   const supabase = useClerkSupabaseClient();
 
+  // API를 통해 사용자 정보 가져오기 (Hook 규칙 위반 없이)
   useEffect(() => {
-    // Clerk를 동적으로 로드
-    import("@clerk/nextjs")
-      .then((clerk) => {
-        // useUser Hook을 사용하는 컴포넌트를 동적으로 생성
-        const UserComponent = () => {
-          const { user: clerkUser, isLoaded: clerkLoaded } = clerk.useUser();
-          
-          useEffect(() => {
-            setUser(clerkUser);
-            setIsLoaded(clerkLoaded);
-          }, [clerkUser, clerkLoaded]);
-          
-          return null;
-        };
+    const fetchUserInfo = async () => {
+      try {
+        const response = await fetch("/api/user-info");
+        const data = await response.json();
         
-        // 임시로 렌더링하여 Hook 실행
-        setIsLoaded(true);
-      })
-      .catch(() => {
-        setIsLoaded(true);
-      });
-  }, []);
-
-  // API를 통해 사용자 정보 가져오기 (더 안전한 방법)
-  useEffect(() => {
-    if (!isLoaded) return;
-    
-    fetch("/api/user-info")
-      .then((res) => res.json())
-      .then((data) => {
+        setHasClerk(data.hasClerk);
+        
         if (data.user) {
           setUser(data.user);
         }
-      })
-      .catch(() => {
-        // 에러 무시
-      });
-  }, [isLoaded]);
+      } catch (error) {
+        console.error("Failed to fetch user info:", error);
+        setHasClerk(false);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
 
   const [connectionStatus, setConnectionStatus] = useState<
     "idle" | "testing" | "success" | "error"
@@ -114,7 +97,7 @@ function AuthTestPageContent() {
         const userName =
           user.fullName ||
           [user.firstName, user.lastName].filter(Boolean).join(" ") ||
-          user.emailAddresses[0]?.emailAddress.split("@")[0] ||
+          user.emailAddresses?.[0]?.emailAddress?.split("@")[0] ||
           "익명";
 
         const { data: newUser, error: createError } = await supabase
@@ -314,7 +297,7 @@ function AuthTestPageContent() {
           </div>
           <div className="flex gap-2">
             <span className="font-semibold min-w-[100px]">Email:</span>
-            <span>{user.emailAddresses[0]?.emailAddress}</span>
+            <span>{user.emailAddresses?.[0]?.emailAddress || "이메일 없음"}</span>
           </div>
           <div className="flex gap-2">
             <span className="font-semibold min-w-[100px]">이름:</span>
