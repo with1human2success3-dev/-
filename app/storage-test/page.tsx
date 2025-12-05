@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useClerkSupabaseClient } from "@/lib/supabase/clerk-client";
 import { Button } from "@/components/ui/button";
+
+// 동적 렌더링 강제 (빌드 시 건너뛰기)
+export const dynamic = "force-dynamic";
 import {
   LuUpload,
   LuTrash2,

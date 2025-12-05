@@ -2,6 +2,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { RiSupabaseFill } from "react-icons/ri";
 
+// 동적 렌더링 강제 (빌드 시 Clerk 환경 변수 없이도 빌드 가능)
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   return (
     <main className="min-h-[calc(100vh-80px)] flex items-center px-8 py-16 lg:py-24">
