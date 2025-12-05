@@ -1,12 +1,25 @@
 // 동적 렌더링 강제 (빌드 시 Clerk 환경 변수 없이도 빌드 가능)
 export const dynamic = "force-dynamic";
 
+import Image from "next/image";
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-white">
       {/* 히어로 섹션 - 잡지 스타일 */}
       <section className="w-full relative">
         <div className="relative h-screen bg-white flex items-center justify-center overflow-hidden border-b border-gray-200">
+          {/* 프랑스 테루아 이미지 오버레이 */}
+          <div className="absolute inset-0 z-0">
+            <Image
+              src="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=2070&auto=format&fit=crop"
+              alt="French Terroir"
+              fill
+              className="object-cover opacity-[0.08] mix-blend-multiply grayscale"
+              priority
+              sizes="100vw"
+            />
+          </div>
           <div className="text-center max-w-4xl mx-auto px-6 relative z-10">
             <div className="mb-6">
               <span className="text-gray-500 text-xs tracking-[0.5em] uppercase font-light mb-4 block">

@@ -53,19 +53,19 @@ const Navbar = () => {
   }, []);
 
   return (
-    <header className="bg-[#F5F1EB] border-b border-[#D4C4B0] sticky top-0 z-50">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       {/* 상단 네비게이션 */}
       <div className="max-w-[1920px] mx-auto px-6 lg:px-12">
         <div className="flex items-center justify-between h-20">
           {/* 좌측 메뉴 */}
           <button className="lg:hidden p-2">
-            <Menu className="w-6 h-6 text-[#8B7355]" />
+            <Menu className="w-6 h-6 text-black" />
           </button>
 
           {/* 로고 */}
           <Link href="/" className="flex items-center">
-            <span className="text-2xl font-serif tracking-wider text-[#1C1C1C]">
-              LUXURY
+            <span className="text-2xl font-serif tracking-tight text-black">
+              WINE
             </span>
           </Link>
 
