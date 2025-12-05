@@ -35,7 +35,7 @@ export function SyncUserProvider({ children }: { children: React.ReactNode }) {
           syncedRef.current = true;
         }
         // 401은 정상 (로그인 안 함) - 에러로 처리하지 않음
-      } catch (error) {
+      } catch {
         // 네트워크 에러 등은 무시
       }
     };

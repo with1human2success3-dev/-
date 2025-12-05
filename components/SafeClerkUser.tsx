@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
  * Clerk가 없을 때도 에러 없이 작동합니다.
  */
 export function useSafeClerkUser() {
-  const [user, setUser] = useState<any>(null);
+  const [user] = useState<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasClerk, setHasClerk] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -31,7 +31,7 @@ export function useSafeClerkUser() {
 
     // Clerk를 동적으로 로드하고 useUser 사용
     import("@clerk/nextjs")
-      .then((clerk) => {
+      .then(() => {
         try {
           // useUser는 Hook이므로 여기서 직접 호출할 수 없음
           // 대신 컴포넌트를 만들어서 사용해야 함

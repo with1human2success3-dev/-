@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import { SyncUserProvider } from "@/components/providers/sync-user-provider";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import ErrorBoundaryWrapper from "@/components/ErrorBoundaryWrapper";
+import ClerkProviderWrapper from "@/components/providers/clerk-provider-wrapper";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,12 +24,6 @@ export const metadata: Metadata = {
 // 동적 렌더링 강제 (빌드 시 환경 변수 없이도 빌드 가능)
 export const dynamic = "force-dynamic";
 
-// ClerkProvider를 동적으로 로드 (SSR 비활성화)
-const ClerkProviderWrapper = dynamic(
-  () => import("@/components/providers/clerk-provider-wrapper"),
-  { ssr: false }
-);
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -40,14 +34,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ErrorBoundary>
+        <ErrorBoundaryWrapper>
           <ClerkProviderWrapper>
             <SyncUserProvider>
               <Navbar />
               {children}
             </SyncUserProvider>
           </ClerkProviderWrapper>
-        </ErrorBoundary>
+        </ErrorBoundaryWrapper>
       </body>
     </html>
   );
