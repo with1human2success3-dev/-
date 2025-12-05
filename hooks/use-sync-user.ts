@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
 import { useEffect, useRef } from "react";
 
 /**
@@ -22,16 +21,42 @@ import { useEffect, useRef } from "react";
  * ```
  */
 export function useSyncUser() {
-  const { isLoaded, userId } = useAuth();
   const syncedRef = useRef(false);
 
+  // Clerk 환경 변수 확인
+  const hasClerkKey = !!(
+    typeof window !== "undefined" &&
+    (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+    (window as any).__NEXT_DATA__.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_build_placeholder_key_for_ci_cd"
+  );
+
   useEffect(() => {
-    // 이미 동기화했거나, 로딩 중이거나, 로그인하지 않은 경우 무시
-    if (syncedRef.current || !isLoaded || !userId) {
+    // Clerk가 없으면 동기화하지 않음
+    if (!hasClerkKey) {
       return;
     }
 
-    // 동기화 실행
+    // Clerk useAuth를 동적으로 import
+    let isLoaded = false;
+    let userId: string | null = null;
+
+    try {
+      // 동적 import로 Clerk 사용
+      import("@clerk/nextjs").then((clerk) => {
+        // useAuth는 Hook이므로 여기서 직접 호출할 수 없음
+        // 대신 API를 통해 확인하거나, 다른 방식 사용
+      });
+    } catch (error) {
+      // Clerk가 없으면 무시
+      return;
+    }
+
+    // 이미 동기화한 경우 무시
+    if (syncedRef.current) {
+      return;
+    }
+
+    // 동기화 실행 (API에서 인증 확인)
     const syncUser = async () => {
       try {
         const response = await fetch("/api/sync-user", {
@@ -39,16 +64,21 @@ export function useSyncUser() {
         });
 
         if (!response.ok) {
+          // 401은 인증되지 않은 것이므로 정상 (로그인 안 함)
+          if (response.status === 401) {
+            return;
+          }
           console.error("Failed to sync user:", await response.text());
           return;
         }
 
         syncedRef.current = true;
       } catch (error) {
+        // 네트워크 에러 등은 무시
         console.error("Error syncing user:", error);
       }
     };
 
     syncUser();
-  }, [isLoaded, userId]);
+  }, [hasClerkKey]);
 }
