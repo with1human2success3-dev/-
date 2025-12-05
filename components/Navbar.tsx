@@ -9,33 +9,46 @@ const Navbar = () => {
   const [ClerkComponents, setClerkComponents] = useState<any>(null);
 
   useEffect(() => {
-    // 클라이언트에서 환경 변수 확인
-    const clerkKey =
-      typeof window !== "undefined"
-        ? (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
-          process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-        : process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    try {
+      // 클라이언트에서 환경 변수 확인
+      const clerkKey =
+        typeof window !== "undefined"
+          ? (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+          : null;
 
-    const isValidKey =
-      !!clerkKey && clerkKey !== "pk_test_build_placeholder_key_for_ci_cd";
+      const isValidKey =
+        !!clerkKey &&
+        clerkKey !== "pk_test_build_placeholder_key_for_ci_cd" &&
+        clerkKey.startsWith("pk_");
 
-    setHasClerkKey(isValidKey);
+      if (!isValidKey) {
+        setHasClerkKey(false);
+        return;
+      }
 
-    // Clerk가 있을 때만 컴포넌트 로드
-    if (isValidKey) {
+      setHasClerkKey(true);
+
+      // Clerk가 있을 때만 컴포넌트 로드
       import("@clerk/nextjs")
         .then((clerk) => {
-          setClerkComponents({
-            SignedOut: clerk.SignedOut,
-            SignInButton: clerk.SignInButton,
-            SignedIn: clerk.SignedIn,
-            UserButton: clerk.UserButton,
-          });
+          if (clerk && clerk.SignedOut && clerk.SignInButton) {
+            setClerkComponents({
+              SignedOut: clerk.SignedOut,
+              SignInButton: clerk.SignInButton,
+              SignedIn: clerk.SignedIn,
+              UserButton: clerk.UserButton,
+            });
+          } else {
+            setHasClerkKey(false);
+          }
         })
         .catch((error) => {
           console.warn("Failed to load Clerk components:", error);
           setHasClerkKey(false);
         });
+    } catch (error) {
+      console.warn("Navbar Clerk setup error:", error);
+      setHasClerkKey(false);
     }
   }, []);
 

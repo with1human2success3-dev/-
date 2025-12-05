@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import { SyncUserProvider } from "@/components/providers/sync-user-provider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,17 +36,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProviderWrapper>
-      <html lang="ko">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          <SyncUserProvider>
-            <Navbar />
-            {children}
-          </SyncUserProvider>
-        </body>
-      </html>
-    </ClerkProviderWrapper>
+    <html lang="ko">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <ErrorBoundary>
+          <ClerkProviderWrapper>
+            <SyncUserProvider>
+              <Navbar />
+              {children}
+            </SyncUserProvider>
+          </ClerkProviderWrapper>
+        </ErrorBoundary>
+      </body>
+    </html>
   );
 }
