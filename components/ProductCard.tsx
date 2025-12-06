@@ -107,9 +107,9 @@ export default function ProductCard({
         {description}
       </p>
 
-      {/* 테이스팅 노트 & 페어링 (hover 시 표시) */}
+      {/* 테이스팅 노트 & 페어링 (항상 표시) */}
       {(tasting || pairing) && (
-        <div className="text-xs text-gray-400 font-light space-y-1 mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-[350ms] ease-out">
+        <div className="text-xs text-gray-400 font-light space-y-1 mb-4 opacity-100">
           {tasting && <p className="italic">테이스팅 노트: {tasting}</p>}
           {pairing && <p className="mt-2">페어링 추천: {pairing}</p>}
         </div>

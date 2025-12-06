@@ -5,78 +5,83 @@ import React, { useState, useEffect } from "react";
 import { Search, ShoppingBag, Menu, User } from "lucide-react";
 
 const Navbar = () => {
-  const [hasClerkKey, setHasClerkKey] = useState(false);
   const [ClerkComponents, setClerkComponents] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasClerkProvider, setHasClerkProvider] = useState(false);
 
   useEffect(() => {
-    try {
-      // Vercel 배포 시에도 작동하도록 여러 경로 확인
-      const windowKey =
-        typeof window !== "undefined"
-          ? (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-          : null;
+    let isMounted = true;
+    let checkInterval: NodeJS.Timeout | null = null;
 
-      // 빌드 타임에 주입된 환경 변수 (Vercel에서도 작동)
-      const processKey =
-        typeof process !== "undefined"
-          ? process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-          : null;
+    const checkClerkProvider = () => {
+      // ClerkProvider가 DOM에 있는지 확인
+      const hasProvider = document.querySelector('[data-clerk-provider]') !== null;
+      
+      if (hasProvider && isMounted) {
+        setHasClerkProvider(true);
+        
+        // Clerk 컴포넌트 로드
+        import("@clerk/nextjs")
+          .then((clerk) => {
+            if (!isMounted) return;
 
-      const clerkKey = windowKey || processKey;
+            if (clerk && clerk.SignedOut && clerk.SignInButton) {
+              setClerkComponents({
+                SignedOut: clerk.SignedOut,
+                SignInButton: clerk.SignInButton,
+                SignedIn: clerk.SignedIn,
+                UserButton: clerk.UserButton,
+              });
 
-      // 개발 환경에서만 디버깅 로그 출력
-      if (process.env.NODE_ENV === "development") {
-        console.log("[Navbar] Clerk Key Check:", {
-          windowKey: windowKey ? "found" : "not found",
-          processKey: processKey ? "found" : "not found",
-          finalKey: clerkKey ? "found" : "not found",
-          keyPrefix: clerkKey?.substring(0, 10) + "...",
-        });
-      }
+              if (process.env.NODE_ENV === "development") {
+                console.log("[Navbar] Clerk components loaded successfully");
+              }
+            } else {
+              console.error("[Navbar] Clerk components not found");
+            }
+          })
+          .catch((error) => {
+            if (!isMounted) return;
+            console.error("[Navbar] Failed to load Clerk components:", error);
+          })
+          .finally(() => {
+            if (isMounted) {
+              setIsLoading(false);
+            }
+          });
 
-      const isValidKey =
-        !!clerkKey &&
-        clerkKey !== "pk_test_build_placeholder_key_for_ci_cd" &&
-        clerkKey.startsWith("pk_");
-
-      if (!isValidKey) {
-        if (process.env.NODE_ENV === "development") {
-          console.warn("[Navbar] Invalid or missing Clerk key");
+        if (checkInterval) {
+          clearInterval(checkInterval);
         }
-        setHasClerkKey(false);
-        return;
+        return true;
       }
 
-      setHasClerkKey(true);
+      return false;
+    };
 
-      // Clerk가 있을 때만 컴포넌트 로드
-      import("@clerk/nextjs")
-        .then((clerk) => {
-          if (clerk && clerk.SignedOut && clerk.SignInButton) {
-            setClerkComponents({
-              SignedOut: clerk.SignedOut,
-              SignInButton: clerk.SignInButton,
-              SignedIn: clerk.SignedIn,
-              UserButton: clerk.UserButton,
-            });
-            if (process.env.NODE_ENV === "development") {
-              console.log("[Navbar] Clerk components loaded successfully");
-            }
-          } else {
-            if (process.env.NODE_ENV === "development") {
-              console.warn("[Navbar] Clerk components not found");
-            }
-            setHasClerkKey(false);
+    // 즉시 한 번 확인
+    if (!checkClerkProvider()) {
+      // ClerkProvider가 아직 없으면 주기적으로 확인 (최대 5초)
+      let attempts = 0;
+      checkInterval = setInterval(() => {
+        attempts++;
+        if (checkClerkProvider() || attempts >= 10) {
+          if (checkInterval) {
+            clearInterval(checkInterval);
           }
-        })
-        .catch((error) => {
-          console.error("[Navbar] Failed to load Clerk components:", error);
-          setHasClerkKey(false);
-        });
-    } catch (error) {
-      console.error("[Navbar] Clerk setup error:", error);
-      setHasClerkKey(false);
+          if (isMounted && attempts >= 10) {
+            setIsLoading(false);
+          }
+        }
+      }, 500);
     }
+
+    return () => {
+      isMounted = false;
+      if (checkInterval) {
+        clearInterval(checkInterval);
+      }
+    };
   }, []);
 
   return (
@@ -114,11 +119,11 @@ const Navbar = () => {
                   <button className="p-2 hover:opacity-70 transition-opacity">
                     <Search className="w-5 h-5 text-black" />
                   </button>
-                  {hasClerkKey && ClerkComponents ? (
+                  {!isLoading && hasClerkProvider && ClerkComponents ? (
                     <>
                       <ClerkComponents.SignedOut>
                         <ClerkComponents.SignInButton mode="modal">
-                          <button className="p-2 hover:opacity-70 transition-opacity">
+                          <button className="p-2 hover:opacity-70 transition-opacity" title="로그인">
                             <User className="w-5 h-5 text-black" />
                           </button>
                         </ClerkComponents.SignInButton>
@@ -133,8 +138,24 @@ const Navbar = () => {
                       </ClerkComponents.SignedIn>
                     </>
                   ) : (
-                    <button className="p-2">
-                      <User className="w-5 h-5 text-black" />
+                    <button
+                      className="p-2 hover:opacity-70 transition-opacity"
+                      title={hasClerkProvider ? "로그인 (로딩 중...)" : "로그인 (환경 변수 설정 필요)"}
+                      disabled={isLoading}
+                      onClick={() => {
+                        if (!hasClerkProvider) {
+                          alert(
+                            "Clerk 환경 변수가 설정되지 않았습니다.\n\n" +
+                            "로그인 기능을 사용하려면:\n" +
+                            "1. .env.local 파일을 열어주세요\n" +
+                            "2. NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY와 CLERK_SECRET_KEY를 추가하세요\n" +
+                            "3. Clerk Dashboard (https://dashboard.clerk.com)에서 API 키를 확인하세요\n" +
+                            "4. 개발 서버를 재시작하세요"
+                          );
+                        }
+                      }}
+                    >
+                      <User className="w-5 h-5 text-black opacity-50" />
                     </button>
                   )}
                 </div>

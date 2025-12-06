@@ -38,11 +38,10 @@ export class ErrorBoundary extends React.Component<
             <button
               onClick={() => {
                 this.setState({ hasError: false, error: null });
-                window.location.reload();
               }}
               className="px-6 py-3 bg-[#1C1C1C] text-[#F5F1EB] rounded hover:bg-[#8B7355] transition-colors"
             >
-              새로고침
+              다시 시도
             </button>
           </div>
         </div>
