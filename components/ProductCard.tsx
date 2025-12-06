@@ -43,6 +43,10 @@ export default function ProductCard({
     "border-black/5",
     "p-4",
     "shadow-sm",
+    // 모바일: 터치 시, PC: hover 시 동일한 효과
+    "active:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)]",
+    "active:-translate-y-2",
+    "active:scale-[1.03]",
     "hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)]",
     "hover:-translate-y-2",
     "hover:scale-[1.03]",
@@ -67,7 +71,7 @@ export default function ProductCard({
             src={defaultImageUrl}
             alt={name}
             fill
-            className="object-cover transition-all duration-[350ms] ease-out group-hover:brightness-110 group-hover:scale-105"
+            className="object-cover transition-all duration-[350ms] ease-out group-active:brightness-110 group-active:scale-105 group-hover:brightness-110 group-hover:scale-105"
             onError={() => setImageError(true)}
             sizes={variant === "compact" ? "75vw" : "(max-width: 768px) 75vw, 33vw"}
           />
